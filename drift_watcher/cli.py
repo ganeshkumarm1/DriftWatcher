@@ -75,6 +75,11 @@ def main():
         action="store_true",
         help="Don't auto-start the event server"
     )
+    parser.add_argument(
+        "--keep-server",
+        action="store_true",
+        help="Keep server running after agent stops"
+    )
     
     args = parser.parse_args()
     
@@ -115,16 +120,42 @@ def main():
     
     # Auto-start server if not running
     server_process = None
+    server_was_started = False
     if not args.no_server:
         if not is_server_running():
             print("🌐 Starting event server...")
             server_process = start_server_background()
+            server_was_started = True
             if is_server_running():
                 print("✅ Event server started")
             else:
                 print("⚠️  Server may not have started. Check manually.")
         else:
             print("✅ Event server already running")
+    
+    # Setup cleanup handler
+    def cleanup(signum=None, frame=None):
+        """Clean up on exit."""
+        print("\n\n🛑 Drift Watcher stopped")
+        
+        # Kill server if we started it and user didn't request to keep it
+        if server_process and server_was_started and not args.keep_server:
+            try:
+                server_process.terminate()
+                server_process.wait(timeout=2)
+                print("🛑 Event server stopped")
+            except:
+                try:
+                    server_process.kill()
+                    print("🛑 Event server killed")
+                except:
+                    pass
+        
+        sys.exit(0)
+    
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, cleanup)
+    signal.signal(signal.SIGTERM, cleanup)
     
     # Change to data directory for events.log
     os.chdir(get_data_dir())
@@ -136,19 +167,10 @@ def main():
         from .core.agent import run_agent_loop
         run_agent_loop(config_file=args.config, goal=args.goal)
     except KeyboardInterrupt:
-        print("\n\n🛑 Drift Watcher stopped")
-        
-        # Ask if user wants to stop the server
-        if server_process:
-            try:
-                response = input("\n❓ Stop the event server too? (y/N): ").strip().lower()
-                if response == 'y':
-                    server_process.terminate()
-                    print("🛑 Event server stopped")
-                else:
-                    print("✅ Event server still running in background")
-            except:
-                print("✅ Event server still running in background")
+        cleanup()
+    except Exception as e:
+        print(f"\n⚠️  Unexpected error: {e}")
+        cleanup()
 
 
 def server():

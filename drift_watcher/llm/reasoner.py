@@ -27,20 +27,18 @@ Recent activity:
 - Sample page content: {sample_content}
 
 Choose ONE state:
-- ALIGNED: Actively working on the goal
-- EXPLORING: Researching/learning related to the goal
+- FOCUSED: Working on or learning about the goal
 - DRIFTING: Off-topic or entertainment
 
 Rules:
 - Page titles AND content are strong indicators
 - Entertainment sites (YouTube, Reddit, social media) = DRIFTING
-- Documentation/learning related to goal = EXPLORING
-- Implementation/debugging related to goal = ALIGNED
+- Documentation, learning, implementation related to goal = FOCUSED
 - Use content to disambiguate unclear titles
 
 Return JSON only:
 {{
-  "state": "ALIGNED | EXPLORING | DRIFTING",
+  "state": "FOCUSED | DRIFTING",
   "confidence": 0.0,
   "reason": "short explanation"
 }}"""

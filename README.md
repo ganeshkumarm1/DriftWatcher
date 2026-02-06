@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="Drift Watcher Logo" width="200"/>
+<img src="assets/logo.png" alt="Drift Watcher Logo" width="200" style="border-radius: 15px"/>
 
 # Drift Watcher
 
@@ -239,15 +239,23 @@ drift-watcher-server              # Start server manually
 drift-watcher --no-server         # Don't auto-start server
 ```
 
-#### Development Mode
+### Dashboard
 
-```bash
-# 1. Start the event server
-python run_server.py
+View your focus stats in real-time at **http://localhost:3333/dashboard**
 
-# 2. In another terminal
-python main.py --goal "Learn Python programming"
-```
+![Dashboard Dark Theme](assets/dashboard_dark.png)
+
+![Dashboard Light Theme](assets/dashboard_white.png)
+
+The dashboard shows:
+- Current goal and focus state (FOCUSED/DRIFTING)
+- Confidence level
+- Drift count (times drifted today)
+- Session time
+- Activity breakdown by category
+- Session history sidebar with past goals
+- Dark/light theme toggle
+- Auto-refreshes every 30 seconds
 
 You should see:
 ```

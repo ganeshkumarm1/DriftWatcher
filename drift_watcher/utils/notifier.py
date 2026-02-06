@@ -5,7 +5,13 @@ import time
 class Notifier:
     """Handles system notifications with cooldown."""
     
-    def __init__(self, cooldown_seconds=300):
+    def __init__(self, cooldown_seconds=120):
+        """
+        Initialize notifier with cooldown.
+        
+        Args:
+            cooldown_seconds: Minimum seconds between notifications (default: 120 = 2 minutes)
+        """
         self.cooldown_seconds = cooldown_seconds
         self._last_notify_ts = 0
     

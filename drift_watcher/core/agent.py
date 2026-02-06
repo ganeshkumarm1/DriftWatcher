@@ -17,6 +17,7 @@ def run_agent_loop(config_file: str = "config.json", goal: str = None):
     # Load configuration
     config = Config(config_file)
     print(f"📋 Config: Bedrock | Window: {config.window_seconds}s")
+    print(f"📊 Dashboard: http://{config.server_host}:{config.server_port}/dashboard")
     
     # Initialize LLM client
     try:
@@ -87,10 +88,21 @@ def run_agent_loop(config_file: str = "config.json", goal: str = None):
             # Check for drift and notify
             if state_value == "DRIFTING" and confidence >= config.drift_threshold:
                 print(f"⚠️ DRIFT DETECTED! Confidence: {confidence:.2f} >= {config.drift_threshold}")
+                
+                # Notify (cooldown handled by notifier)
+                previous_state = state.get("focus_state", "FOCUSED")
+                if previous_state == "FOCUSED":
+                    # Increment drift count on new drift
+                    state["drift_count"] = state.get("drift_count", 0) + 1
+                
                 notifier.notify_drift(goal, confidence)
             elif state_value == "DRIFTING":
                 print(f"⚠️ Drifting but confidence too low: {confidence:.2f} < {config.drift_threshold}")
             
+            # Update and save state
+            state["focus_state"] = state_value
+            state["confidence"] = confidence
+            state["last_check_ts"] = time.time()
             state_manager.save(state)
         
         except KeyboardInterrupt:
