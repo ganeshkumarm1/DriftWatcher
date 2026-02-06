@@ -759,21 +759,3 @@ See `examples/custom_provider.py` for a complete example.
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Built with [Flask](https://flask.palletsprojects.com/)
-- LLM integration via [AWS Bedrock](https://aws.amazon.com/bedrock/), [OpenAI](https://openai.com/), [Anthropic](https://anthropic.com/), and [Ollama](https://ollama.ai/)
-- Chrome extension for activity tracking
-
----
-
-<div align="center">
-
-**Made with ❤️ for focused productivity**
-
-[⬆ Back to Top](#-drift-watcher)
-
-</div>
