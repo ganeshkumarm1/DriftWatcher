@@ -1,0 +1,15 @@
+{
+  "llm": {
+    "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "region_name": "us-east-1"
+  },
+  "agent": {
+    "window_seconds": 30,
+    "drift_confidence_threshold": 0.7,
+    "log_retention_days": 7
+  },
+  "server": {
+    "host": "127.0.0.1",
+    "port": 3333
+  }
+}

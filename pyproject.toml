@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drift-watcher"
+version = "0.1.0"
+description = "A personal focus monitoring system that tracks browser activity and detects when you drift from your goals"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Drift Watcher Contributors"}
+]
+keywords = ["focus", "productivity", "monitoring", "llm", "browser-tracking"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: MacOS",
+]
+
+dependencies = [
+    "boto3>=1.26.0",
+    "flask>=2.3.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+]
+
+[project.scripts]
+drift-watcher = "drift_watcher.cli:main"
+drift-watcher-server = "drift_watcher.cli:server"
+drift-watcher-goal = "drift_watcher.cli:manage_goal"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/drift-watcher"
+Repository = "https://github.com/yourusername/drift-watcher"
+Issues = "https://github.com/yourusername/drift-watcher/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["drift_watcher*"]
+
+[tool.setuptools.package-data]
+drift_watcher = ["*.json"]
