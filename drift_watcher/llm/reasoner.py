@@ -1,95 +1,62 @@
 import json
 from .base import BaseLLMClient
-from .bedrock_client import BedrockClient
 
 
 class LLMReasoner:
-    """Handles LLM-based reasoning for focus state and activity classification."""
-    
-    ALLOWED_CATEGORIES = [
-        "IMPLEMENTATION",
-        "DEBUGGING",
-        "READING_DOCUMENTATION",
-        "PLANNING",
-        "COMMUNICATION",
-        "BROWSING",
-        "OTHER"
-    ]
-    
-    STATE_ASSESSMENT_PROMPT = """You are helping Drift Watcher, a personal focus monitoring system.
+    """Handles LLM-based reasoning for focus state assessment."""
 
-Current goal:
-"{goal}"
+    FOCUS_ASSESSMENT_PROMPT = """You are Drift Watcher, a personal focus monitoring system.
 
-Recent activity:
-- Breakdown: {breakdown}
-- Sample page titles: {sample_titles}
-- Sample page content: {sample_content}
+Goal: "{goal}"
 
-Choose ONE state:
-- FOCUSED: Working on or learning about the goal
-- DRIFTING: Off-topic or entertainment
+Recent browser activity:
+{pages}
+
+For each page, decide if it is relevant to the goal.
+Then give an overall FOCUSED or DRIFTING state based on time-weighted relevance.
 
 Rules:
-- Page titles AND content are strong indicators
-- Entertainment sites (YouTube, Reddit, social media) = DRIFTING
-- Documentation, learning, implementation related to goal = FOCUSED
-- Use content to disambiguate unclear titles
+- FOCUSED: Most time spent on content directly related to the goal
+- DRIFTING: Most time spent on unrelated content
+- Educational content (tutorials, docs, articles) counts as relevant if topic relates to goal
+- Entertainment (unrelated videos, social media, news) = irrelevant
+- When in doubt about relevance, lean towards irrelevant
 
 Return JSON only:
 {{
   "state": "FOCUSED | DRIFTING",
   "confidence": 0.0,
-  "reason": "short explanation"
+  "reason": "brief explanation",
+  "relevant_percent": 0.0,
+  "irrelevant_percent": 0.0
 }}"""
 
-    ACTIVITY_CLASSIFICATION_PROMPT = """You are classifying browser activity for Drift Watcher, a personal focus monitoring system.
+    def __init__(self, client: BaseLLMClient):
+        if client is None:
+            raise ValueError("LLM client is required")
+        self.client = client
 
-Choose ONE category from:
-{categories}
+    def assess_focus_state(self, goal: str, activity_summary: dict) -> dict:
+        """Single LLM call to assess focus state and relevance breakdown."""
+        pages = activity_summary.get("pages", [])
+        pages_text = "\n".join(
+            f"- [{p['duration_min']}min] {p['title']} ({p['url']})"
+            + (f"\n  Content: {p['content'][:150]}" if p.get("content") else "")
+            for p in pages
+        )
 
-Rules:
-- Base your judgment on title, URL, content, and interaction patterns.
-- Content provides context for ambiguous titles
-- Do NOT invent information.
-- Use OTHER if unsure.
-- Return JSON only.
-
-Activity slice:
-{activity_slice}
-
-Return:
-{{ "category": "<one of the allowed categories>" }}"""
-    
-    def __init__(self, client: BaseLLMClient = None):
-        """
-        Initialize reasoner with an LLM client.
-        
-        Args:
-            client: LLM client instance. If None, uses default Bedrock client.
-        """
-        self.client = client or BedrockClient()
-    
-    def assess_focus_state(self, goal, activity_summary):
-        """Assess the current focus state based on goal and activity."""
-        prompt = self.STATE_ASSESSMENT_PROMPT.format(
+        prompt = self.FOCUS_ASSESSMENT_PROMPT.format(
             goal=goal,
-            breakdown=activity_summary.get("breakdown"),
-            sample_titles=activity_summary.get("sample_titles"),
-            sample_content=activity_summary.get("sample_content", [])
+            pages=pages_text or "No pages visited"
         )
-        return self.client.invoke(prompt, max_tokens=100)
-    
-    def classify_activity(self, activity_slice):
-        """Classify a single activity slice."""
-        prompt = self.ACTIVITY_CLASSIFICATION_PROMPT.format(
-            categories=", ".join(self.ALLOWED_CATEGORIES),
-            activity_slice=json.dumps(activity_slice, indent=2)
-        )
-        response = self.client.invoke(prompt)
-        category = response.get("category", "OTHER")
-        
-        if category not in self.ALLOWED_CATEGORIES:
-            category = "OTHER"
-        
-        return category
+
+        result = self.client.invoke(prompt, max_tokens=150)
+
+        # Ensure required fields exist
+        result.setdefault("state", "FOCUSED")
+        result.setdefault("confidence", 0.5)
+        result.setdefault("reason", "")
+        result.setdefault("relevant_percent", 0.0)
+        result.setdefault("irrelevant_percent", 0.0)
+
+        return result

@@ -25,7 +25,7 @@ A personal focus monitoring system that tracks browser activity and detects when
 - 🔌 **Extensible** - Easy to add custom LLM providers
 - 📊 **Activity Classification** - Automatic categorization of browser activity
 - 📄 **Content-Aware** - Uses page titles, URLs, and content for accurate classification
-- 🎯 **Focus State Detection** - ALIGNED, EXPLORING, or DRIFTING states
+- 🎯 **Focus State Detection** - FOCUSED or DRIFTING states
 - 🔔 **Smart Notifications** - macOS notifications when you drift from goals
 - 🔌 **Chrome Extension** - Seamless browser activity tracking
 - 🗑️ **Auto Log Management** - Automatic cleanup of old logs
@@ -252,7 +252,7 @@ The dashboard shows:
 - Confidence level
 - Drift count (times drifted today)
 - Session time
-- Activity breakdown by category
+- Relevant vs irrelevant activity breakdown
 - Session history sidebar with past goals
 - Dark/light theme toggle
 - Auto-refreshes every 30 seconds
@@ -274,8 +274,7 @@ You should see:
 **What Drift Watcher Does:**
 - Auto-starts event server if not running
 - Monitors your browser activity every 30 seconds
-- Classifies your activities (IMPLEMENTATION, DEBUGGING, BROWSING, etc.)
-- Assesses if you're ALIGNED, EXPLORING, or DRIFTING
+- Assesses if you're FOCUSED or DRIFTING based on page titles and content
 - Sends macOS notifications when you drift from your goal
 - Asks if you want to stop the server when you quit
 
@@ -294,7 +293,7 @@ drift-watcher-goal --set "Build a web application"
 #### Development Mode
 
 ```bash
-python manage_goal.py
+drift-watcher-goal
 ```
 
 Output:
@@ -305,49 +304,18 @@ Current Focus Goal
 
 🎯 Learn Python programming
 
-State: EXPLORING
+State: FOCUSED
 Confidence: 0.7
 ============================================================
 ```
 
 ### Switching LLM Providers
 
-#### System-Wide Installation
-
-```bash
-# Switch to Ollama (local, free)
-drift-watcher-switch ollama
-
-# Switch to OpenAI
-drift-watcher-switch openai
-
-# Switch to Anthropic
-drift-watcher-switch anthropic
-
-# Switch back to Bedrock
-drift-watcher-switch bedrock
-```
-
-#### Development Mode
-
-```bash
-# Switch to Ollama (local, free)
-python switch_provider.py ollama
-
-# Switch to OpenAI
-python switch_provider.py openai
-
-# Switch to Anthropic
-python switch_provider.py anthropic
-
-# Switch back to Bedrock
-python switch_provider.py bedrock
-```
+Edit `~/.drift-watcher/config.json` and restart the agent. See [Configuration](#️-configuration) for provider options.
 
 **What Drift Watcher Does:**
 - Monitors your browser activity every 30 seconds
-- Classifies your activities (IMPLEMENTATION, DEBUGGING, BROWSING, etc.)
-- Assesses if you're ALIGNED, EXPLORING, or DRIFTING
+- Assesses if you're FOCUSED or DRIFTING based on page titles and content
 - Sends macOS notifications when you drift from your goal
 
 ---
@@ -356,20 +324,19 @@ python switch_provider.py bedrock
 
 ### Configuration File
 
-The `config.json` file controls all agent settings:
+Located at `~/.drift-watcher/config.json`. Created automatically on first run with Ollama defaults.
 
 ```json
 {
   "llm": {
-    "provider": "bedrock",
-    "config": {
-      "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-      "region_name": "us-east-1"
-    }
+    "provider": "ollama",
+    "model": "qwen2.5:latest",
+    "base_url": "http://localhost:11434"
   },
   "agent": {
     "window_seconds": 30,
-    "drift_confidence_threshold": 0.7
+    "drift_confidence_threshold": 0.7,
+    "log_retention_days": 7
   },
   "server": {
     "host": "127.0.0.1",
@@ -382,8 +349,7 @@ The `config.json` file controls all agent settings:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `llm.provider` | LLM provider name | `bedrock` |
-| `llm.config` | Provider-specific configuration | Varies |
+| `llm.provider` | LLM provider (`ollama` or `bedrock`) | `ollama` |
 | `agent.window_seconds` | Monitoring interval in seconds | `30` |
 | `agent.drift_confidence_threshold` | Confidence threshold for drift alerts | `0.7` |
 | `agent.log_retention_days` | Days to keep event logs | `7` |
@@ -392,28 +358,30 @@ The `config.json` file controls all agent settings:
 
 ### Log Management
 
-Drift Watcher automatically manages log files to prevent excessive disk usage:
-
 **When you set a new goal:**
 - Old event logs are cleared
-- Activity cache is reset
 - Fresh start for the new goal
 
 **Automatic cleanup:**
-- Logs older than 7 days are automatically deleted (configurable)
+- Logs older than 7 days are automatically deleted
 - Cleanup runs on startup and every ~50 minutes
-- Keeps your data directory clean
 
-**Configure retention period:**
+### Provider Configurations
+
+<details>
+<summary><b>Ollama (Local, Default)</b></summary>
+
 ```json
 {
-  "agent": {
-    "log_retention_days": 14  // Keep logs for 14 days
+  "llm": {
+    "provider": "ollama",
+    "model": "qwen2.5:latest",
+    "base_url": "http://localhost:11434"
   }
 }
 ```
 
-### Provider Configurations
+</details>
 
 <details>
 <summary><b>AWS Bedrock</b></summary>
@@ -422,61 +390,8 @@ Drift Watcher automatically manages log files to prevent excessive disk usage:
 {
   "llm": {
     "provider": "bedrock",
-    "config": {
-      "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-      "region_name": "us-east-1"
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>OpenAI</b></summary>
-
-```json
-{
-  "llm": {
-    "provider": "openai",
-    "config": {
-      "model": "gpt-4",
-      "api_key": "sk-..."
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>Anthropic</b></summary>
-
-```json
-{
-  "llm": {
-    "provider": "anthropic",
-    "config": {
-      "model": "claude-3-5-sonnet-20241022",
-      "api_key": "sk-ant-..."
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>Ollama (Local)</b></summary>
-
-```json
-{
-  "llm": {
-    "provider": "ollama",
-    "config": {
-      "model": "llama3.2",
-      "base_url": "http://localhost:11434"
-    }
+    "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "region_name": "us-east-1"
   }
 }
 ```
@@ -485,13 +400,9 @@ Drift Watcher automatically manages log files to prevent excessive disk usage:
 
 ---
 
-## � Custom LLM Providers
+## 🔌 Custom LLM Providers
 
-Drift Watcher uses AWS Bedrock by default, but you can easily add your own LLM provider (OpenAI, Anthropic, Ollama, etc.).
-
-### Creating a Custom Provider
-
-See `examples/custom_provider.py` for a complete example. Here's the basic structure:
+You can add your own LLM provider by implementing `BaseLLMClient`. See `examples/custom_provider.py` for a complete example.
 
 ```python
 from drift_watcher.llm.base import BaseLLMClient
@@ -507,32 +418,19 @@ class MyLLMClient(BaseLLMClient):
         return f"My Provider ({self.model})"
     
     def invoke(self, prompt: str, max_tokens: int = 200, temperature: float = 0.2) -> dict:
-        # Call your LLM API here
-        # Must return parsed JSON dict with keys: state, confidence, reason
         response = your_api_call(prompt, max_tokens, temperature)
         return json.loads(response)
 ```
 
-### Using Your Custom Provider
-
-```python
-from drift_watcher.llm import LLMReasoner
-from my_provider import MyLLMClient
-
-# Create your client
-client = MyLLMClient(api_key="your-key", model="gpt-4")
-
-# Use it with the reasoner
-reasoner = LLMReasoner(client=client)
-```
-
-The custom provider must return JSON responses matching this format:
+The `invoke` method must return a dict with:
 
 ```json
 {
-  "state": "ALIGNED | EXPLORING | DRIFTING",
+  "state": "FOCUSED | DRIFTING",
   "confidence": 0.85,
-  "reason": "Brief explanation"
+  "reason": "Brief explanation",
+  "relevant_percent": 80.0,
+  "irrelevant_percent": 20.0
 }
 ```
 
@@ -540,74 +438,24 @@ The custom provider must return JSON responses matching this format:
 
 ## 📚 Command Reference
 
-### System-Wide Installation
-
 ```bash
 # Main agent (auto-starts server)
 drift-watcher --goal "Your goal"
 drift-watcher                      # Use existing goal
 drift-watcher --no-server          # Don't auto-start server
+drift-watcher --keep-server        # Keep server after agent stops
 drift-watcher --test-notification  # Test notifications
 
-# Manual server control (optional)
+# Server
 drift-watcher-server
 drift-watcher-server --host 127.0.0.1 --port 3333
 
 # Goal management
 drift-watcher-goal                    # View current goal
 drift-watcher-goal --set "New goal"   # Set new goal
-
-# Provider switching
-drift-watcher-switch bedrock
-drift-watcher-switch openai
-drift-watcher-switch anthropic
-drift-watcher-switch ollama
 ```
 
-### Development Mode
-
-```bash
-# Agent commands
-python main.py --goal "Your focus goal"
-
-# Use existing goal
-python main.py
-
-# Custom configuration file
-python main.py --config custom.json
-
-# Show help
-python main.py --help
-```
-
-### Goal Management
-
-```bash
-# View current goal
-python manage_goal.py
-
-# Set new goal
-python manage_goal.py --set "New goal"
-
-# Show help
-python manage_goal.py --help
-```
-
-### Provider Switching
-
-```bash
-# Switch provider
-python switch_provider.py <provider>
-
-# Available providers: bedrock, openai, anthropic, ollama
-```
-
-### Server
-
-```bash
-# Start event server
-python run_server.py
-```
+To switch providers, edit `~/.drift-watcher/config.json` and restart.
 
 ---
 
@@ -675,10 +523,8 @@ See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed help.
 <summary><b>Drift Watcher not detecting activity</b></summary>
 
 - Verify Chrome extension is installed and enabled at `chrome://extensions/`
-- Check event server is running (`python run_server.py`)
-- Ensure extension can reach `http://localhost:3333`
+- Check event server is running: `curl http://localhost:3333/health`
 - Check browser console for errors (F12 → Console)
-- Try reloading the extension
 
 </details>
 

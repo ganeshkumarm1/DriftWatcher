@@ -54,4 +54,4 @@ where = ["."]
 include = ["drift_watcher*"]
 
 [tool.setuptools.package-data]
-drift_watcher = ["*.json"]
+drift_watcher = ["*.json", "dashboard/*.html", "dashboard/*.css", "dashboard/*.js"]

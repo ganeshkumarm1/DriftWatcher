@@ -63,22 +63,9 @@ class EventServer:
             try:
                 from ..core.state_manager import StateManager
                 from ..tracking.event_reader import EventReader
-                from ..tracking.activity_processor import ActivityProcessor
                 
-                # Load current state
                 state_manager = StateManager()
                 state = state_manager.load()
-                
-                # Get recent activity
-                event_reader = EventReader(str(self.events_file))
-                recent_events = event_reader.read_recent(300)  # Last 5 minutes
-                
-                # Calculate activity breakdown
-                activity_breakdown = {}
-                if recent_events:
-                    processor = ActivityProcessor()
-                    summary = processor.aggregate(recent_events)
-                    activity_breakdown = summary.get("breakdown", {})
                 
                 # Calculate session time
                 session_minutes = 0
@@ -103,7 +90,8 @@ class EventServer:
                     "drift_count": state.get("drift_count", 0),
                     "session_minutes": session_minutes,
                     "last_check": last_check,
-                    "activity_breakdown": activity_breakdown
+                    "relevant_percent": state.get("relevant_percent", 0.0),
+                    "irrelevant_percent": state.get("irrelevant_percent", 0.0),
                 }), 200
             
             except Exception as e:

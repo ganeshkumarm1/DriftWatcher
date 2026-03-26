@@ -229,18 +229,26 @@ function renderDashboard(data) {
     const stateEmoji = data.focus_state === 'FOCUSED' ? '✅' : '⚠️';
     const stateInfo = STATE_INFO[data.focus_state] || 'Unknown state';
 
-    const breakdown = data.activity_breakdown || {};
-    const breakdownHTML = Object.entries(breakdown)
-        .sort((a, b) => b[1] - a[1])
-        .map(([category, percent]) => `
-            <div class="activity-item">
-                <span class="activity-label">${category.replace(/_/g, ' ')}</span>
-                <div class="activity-bar">
-                    <div class="activity-fill" style="width: ${percent}%"></div>
-                </div>
-                <span class="activity-percent">${percent}%</span>
+    const relevantPct = Math.round(data.relevant_percent || 0);
+    const irrelevantPct = Math.round(data.irrelevant_percent || 0);
+    const hasBreakdown = relevantPct + irrelevantPct > 0;
+
+    const breakdownHTML = hasBreakdown ? `
+        <div class="activity-item">
+            <span class="activity-label">Relevant</span>
+            <div class="activity-bar">
+                <div class="activity-fill" style="width: ${relevantPct}%; background: #10b981"></div>
             </div>
-        `).join('');
+            <span class="activity-percent">${relevantPct}%</span>
+        </div>
+        <div class="activity-item">
+            <span class="activity-label">Irrelevant</span>
+            <div class="activity-bar">
+                <div class="activity-fill" style="width: ${irrelevantPct}%; background: #ef4444"></div>
+            </div>
+            <span class="activity-percent">${irrelevantPct}%</span>
+        </div>
+    ` : '';
 
     document.getElementById('dashboard').innerHTML = `
         <div class="cards">
@@ -292,7 +300,7 @@ function renderDashboard(data) {
                 <div class="card-subtitle">Time since last assessment</div>
             </div>
 
-            ${breakdownHTML ? `
+            ${hasBreakdown ? `
             <div class="card" style="grid-column: 1 / -1;">
                 <div class="card-title">Activity Breakdown</div>
                 <div class="activity-breakdown">

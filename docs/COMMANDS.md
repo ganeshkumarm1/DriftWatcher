@@ -1,38 +1,37 @@
 # Command Reference
 
-## Main Commands
+## Main Agent
 
-### Start with Goal
 ```bash
-python main.py --goal "Learn Python programming"
-```
+# Run with goal (auto-starts server)
+drift-watcher --goal "Learn Python programming"
 
-### Start with Existing Goal
-```bash
-python main.py
-```
+# Run with existing goal
+drift-watcher
 
-### Custom Configuration
-```bash
-python main.py --config custom_config.json
-```
+# Custom config file
+drift-watcher --config /path/to/config.json
 
-### Combined Options
-```bash
-python main.py --goal "Build web app" --config custom.json
-```
+# Don't auto-start server
+drift-watcher --no-server
 
-### Help
-```bash
-python main.py --help
+# Keep server running after agent stops
+drift-watcher --keep-server
+
+# Test notifications
+drift-watcher --test-notification
 ```
 
 ## Goal Management
 
-### View Current Goal
 ```bash
-python manage_goal.py
+# View current goal
+drift-watcher-goal
+
+# Set new goal
+drift-watcher-goal --set "Learn machine learning"
 ```
+
 Output:
 ```
 ============================================================
@@ -41,91 +40,58 @@ Current Focus Goal
 
 🎯 Learn Python programming
 
-State: EXPLORING
+State: FOCUSED
 Confidence: 0.7
 ============================================================
 ```
 
-### Set New Goal
+## Server
+
 ```bash
-python manage_goal.py --set "Learn machine learning"
+# Start server manually
+drift-watcher-server
+
+# Custom host/port
+drift-watcher-server --host 127.0.0.1 --port 3333
 ```
 
-### Help
-```bash
-python manage_goal.py --help
+## Switching LLM Provider
+
+Edit `~/.drift-watcher/config.json`:
+
+**Ollama (local):**
+```json
+{
+  "llm": {
+    "provider": "ollama",
+    "model": "qwen2.5:latest",
+    "base_url": "http://localhost:11434"
+  }
+}
 ```
 
-## Provider Switching
-
-### Switch to Ollama (Local)
-```bash
-python switch_provider.py ollama
-```
-
-### Switch to OpenAI
-```bash
-python switch_provider.py openai
-# Don't forget to add API key in config.json
-```
-
-### Switch to Anthropic
-```bash
-python switch_provider.py anthropic
-# Don't forget to add API key in config.json
-```
-
-### Switch to AWS Bedrock
-```bash
-python switch_provider.py bedrock
-```
-
-### List Available Providers
-```bash
-python switch_provider.py
-```
-
-## Event Server
-
-### Start Server (Default: localhost:3333)
-```bash
-python run_server.py
-```
-
-## Examples
-
-### Custom Provider Example
-```bash
-python examples/custom_provider.py
-```
-
-### Model Switching Example
-```bash
-python examples/switch_models.py
+**AWS Bedrock:**
+```json
+{
+  "llm": {
+    "provider": "bedrock",
+    "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "region_name": "us-east-1"
+  }
+}
 ```
 
 ## Typical Workflow
 
-1. **Start the server:**
+1. Set your goal and start:
    ```bash
-   python run_server.py
+   drift-watcher --goal "Learn Python programming"
    ```
 
-2. **In another terminal, set your goal and start Drift Watcher:**
+2. Change goal:
    ```bash
-   python main.py --goal "Learn Python programming"
+   drift-watcher-goal --set "Build a web application"
+   drift-watcher
    ```
 
-3. **Change goal later:**
-   ```bash
-   # Stop Drift Watcher (Ctrl+C)
-   python manage_goal.py --set "Build a web application"
-   python main.py
-   ```
-
-4. **Switch LLM provider:**
-   ```bash
-   # Stop Drift Watcher (Ctrl+C)
-   python switch_provider.py ollama
-   python main.py
-   ```
+3. Switch provider: edit `~/.drift-watcher/config.json` and restart.

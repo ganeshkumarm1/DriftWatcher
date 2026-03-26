@@ -88,27 +88,11 @@ def main():
         data_dir = get_data_dir()
         args.config = str(data_dir / "config.json")
         
-        # Create default config if it doesn't exist
         if not Path(args.config).exists():
-            import json
-            default_config = {
-                "llm": {
-                    "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-                    "region_name": "us-east-1"
-                },
-                "agent": {
-                    "window_seconds": 30,
-                    "drift_confidence_threshold": 0.7,
-                    "log_retention_days": 7
-                },
-                "server": {
-                    "host": "127.0.0.1",
-                    "port": 3333
-                }
-            }
-            with open(args.config, "w") as f:
-                json.dump(default_config, f, indent=2)
-            print(f"📋 Created config at {args.config}")
+            import shutil
+            default = Path(__file__).parent / "config.default.json"
+            shutil.copy(default, args.config)
+            print(f"📋 Created default config at {args.config}")
     
     # Test notification
     if args.test_notification:
@@ -253,9 +237,6 @@ def manage_goal():
         print(f"State: {state.get('focus_state', 'UNKNOWN')}")
         print(f"Confidence: {state.get('confidence', 0.0)}")
         print("=" * 60)
-
-    if args.provider in ["openai", "anthropic"]:
-        print(f"\n⚠️  Don't forget to add your API key to {args.config}")
 
 
 if __name__ == "__main__":
