@@ -18,7 +18,7 @@ class BedrockClient(BaseLLMClient):
     def name(self) -> str:
         return f"AWS Bedrock ({self.model_id})"
     
-    def invoke(self, prompt: str, max_tokens: int = 200, temperature: float = 0.2) -> dict:
+    def invoke(self, prompt: str, max_tokens: int = 500, temperature: float = 0.2) -> dict:
         """Invoke the LLM with a prompt and return parsed JSON response."""
         body = {
             "anthropic_version": "bedrock-2023-05-31",
@@ -41,5 +41,13 @@ class BedrockClient(BaseLLMClient):
         
         raw = json.loads(response["body"].read())
         text = raw["content"][0]["text"]
+        print(f"🔍 Raw LLM response: {text[:300]}")
         
-        return json.loads(text)
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            import re
+            json_match = re.search(r'\{.*\}', text, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group(0))
+            raise

@@ -1,11 +1,11 @@
 {
     "llm": {
         "provider": "bedrock",
-        "model_id": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "model_id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
         "region_name": "us-east-1"
     },
     "agent": {
-        "window_seconds": 30,
+        "window_seconds": 15,
         "drift_confidence_threshold": 0.7,
         "log_retention_days": 7
     },

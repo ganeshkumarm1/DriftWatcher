@@ -50,7 +50,7 @@ Return JSON only:
             pages=pages_text or "No pages visited"
         )
 
-        result = self.client.invoke(prompt, max_tokens=150)
+        result = self.client.invoke(prompt, max_tokens=500)
 
         # Ensure required fields exist
         result.setdefault("state", "FOCUSED")

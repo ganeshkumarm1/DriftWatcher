@@ -19,14 +19,15 @@ class OllamaClient(BaseLLMClient):
     def name(self) -> str:
         return f"Ollama ({self.model})"
     
-    def invoke(self, prompt: str, max_tokens: int = 200, temperature: float = 0.2) -> dict:
+    def invoke(self, prompt: str, max_tokens: int = 500, temperature: float = 0.2) -> dict:
         """Invoke Ollama and return parsed JSON response."""
         response = self.client.generate(
             model=self.model,
             prompt=prompt,
             options={
                 "temperature": temperature,
-                "num_ctx": max_tokens
+                "num_predict": max_tokens,  # max output tokens
+                "num_ctx": 4096,            # context window
             }
         )
         
