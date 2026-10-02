@@ -1,98 +1,182 @@
+<!-- @steered SNARE-1 2026-09-18 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drift Watcher Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="dashboard.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DriftWatcher</title>
+<link rel="stylesheet" href="/dashboard.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-title">Session History</div>
-            </div>
-            <div class="sidebar-content" id="sidebar-content">
-                <div class="loader">
-                    <div class="loader-spinner">
-                        <div class="loader-ring"></div>
-                        <div class="loader-ring"></div>
-                        <div class="loader-ring"></div>
-                    </div>
-                    <div class="loader-content">
-                        <div class="loader-text">Loading History</div>
-                    </div>
-                </div>
-            </div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">🎯 Start a New Session</div>
+    <p class="modal-hint">Describe what you want to achieve. Be specific — the more precise your goal, the more accurate drift detection will be.</p>
+    <textarea class="modal-textarea" id="goal-input" placeholder="e.g. Fix event collection bugs in DriftWatcher so the LLM gets richer context for classification"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-modal-start" onclick="submitGoal()">Start Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- App Shell -->
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar collapsed" id="sidebar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+      <span class="toggle-label">Past Goals</span>
+      <span class="chevron">◀</span>
+    </button>
+    <div class="sidebar-inner">
+      <div class="sidebar-section-label">Recent</div>
+      <div id="past-goals-list"><div style="padding:0 16px;font-size:12px;color:#aaa">Loading…</div></div>
+    </div>
+    <span class="sidebar-rotated-label">Past Goals</span>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">🧠 DriftWatcher</div>
+      <div class="header-goal" id="header-goal" style="display:none">
+        <span class="header-goal-label">Current Goal:</span>
+        <span class="header-goal-text" id="header-goal-text"></span>
+      </div>
+      <div class="header-right">
+        <span class="session-duration" id="session-duration"></span>
+        <div class="pause-wrap" id="pause-wrap" style="display:none">
+          <button class="btn-pause" id="btn-pause" onclick="togglePauseMenu()">⏸ Pause</button>
+          <div class="pause-menu" id="pause-menu" style="display:none">
+            <div onclick="pauseAgent(15);closePauseMenu()">15 min</div>
+            <div onclick="pauseAgent(30);closePauseMenu()">30 min</div>
+            <div onclick="pauseAgent(60);closePauseMenu()">1 hour</div>
+          </div>
         </div>
+        <button class="btn-end" id="btn-end" style="display:none" onclick="endSession()">End Session</button>
+      </div>
+    </header>
 
-        <!-- Sidebar Toggle -->
-        <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">
-            <svg class="toggle-icon" viewBox="0 0 24 24">
-                <line x1="3" y1="12" x2="21" y2="12"/>
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
-        </button>
-
-        <!-- Main Content -->
-        <div class="main-content" id="main-content">
-            <div class="container">
-                <div class="header">
-                    <div class="header-left">
-                        <img src="https://raw.githubusercontent.com/ganeshkumarm1/DriftWatcher/main/assets/logo.png" alt="Drift Watcher" class="logo" onerror="this.style.display='none'">
-                        <div class="header-text">
-                            <h1>Drift Watcher</h1>
-                            <p>Real-time Focus Monitoring</p>
-                        </div>
-                    </div>
-                    <div class="theme-switch" onclick="toggleTheme()">
-                        <div class="theme-switch-slider">
-                            <svg class="theme-icon moon-icon" viewBox="0 0 24 24" style="display: block;">
-                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                            </svg>
-                            <svg class="theme-icon sun-icon" viewBox="0 0 24 24" style="display: none;">
-                                <circle cx="12" cy="12" r="5"/>
-                                <line x1="12" y1="1" x2="12" y2="3"/>
-                                <line x1="12" y1="21" x2="12" y2="23"/>
-                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                                <line x1="1" y1="12" x2="3" y2="12"/>
-                                <line x1="21" y1="12" x2="23" y2="12"/>
-                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="dashboard">
-                    <div class="loader">
-                        <div class="loader-spinner">
-                            <div class="loader-ring"></div>
-                            <div class="loader-ring"></div>
-                            <div class="loader-ring"></div>
-                        </div>
-                        <div class="loader-content">
-                            <div class="loader-text">Loading Dashboard</div>
-                            <div class="loader-subtext">Fetching your focus stats...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Pause banner -->
+    <div class="pause-banner" id="pause-banner" style="display:none">
+      ⏸ Monitoring paused — <span id="pause-remaining"></span> remaining
+      <button onclick="resumeAgent()" style="margin-left:12px;background:none;border:1px solid rgba(42,42,42,0.3);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px;color:inherit">Resume</button>
     </div>
 
-    <button class="refresh-btn" onclick="loadDashboard()" title="Refresh">
-        <svg class="refresh-icon" viewBox="0 0 24 24">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-        </svg>
-    </button>
+    <!-- Agent banner -->
+    <div class="agent-banner" id="agent-banner">
+      ⚠️ Agent not running — classifications are paused. Start it with: <code>drift-watcher</code>
+    </div>
 
-    <script src="dashboard.js"></script>
+    <!-- No-goal state -->
+    <div class="no-goal-shell" id="no-goal-area" style="display:none">
+      <div class="no-goal-emoji">🎯</div>
+      <div class="no-goal-headline">What are you working on?</div>
+      <p class="no-goal-sub">Set a goal to start monitoring your focus. DriftWatcher will track your browser activity and nudge you when you drift.</p>
+      <button class="btn-start-goal" onclick="openModal()">+ Start a Goal</button>
+      <div class="no-goal-hint">Only one goal at a time</div>
+    </div>
+
+    <!-- Active: two columns -->
+    <div class="columns" id="active-area" style="display:none">
+
+      <!-- Left column -->
+      <div class="col-left">
+
+        <!-- State Card -->
+        <div class="state-card unknown" id="state-card">
+          <div class="state-top">
+            <div class="pulse-dot"></div>
+            <div class="state-label" id="state-label">—</div>
+            <div class="state-confidence" id="state-confidence"></div>
+          </div>
+          <p class="state-reason" id="state-reason"></p>
+          <div class="stat-chips">
+            <span class="chip" id="chip-drifts">—</span>
+            <span class="chip" id="chip-session">—</span>
+            <span class="chip" id="chip-check">—</span>
+          </div>
+        </div>
+
+        <!-- Drift Logs -->
+        <div>
+          <div class="section-label">Drift Log</div>
+          <div id="drift-log-list" class="drift-log-list">
+            <div class="drift-empty">✨ No drifts yet — you're crushing it.</div>
+          </div>
+        </div>
+
+        <!-- Session Stats -->
+        <div>
+          <div class="section-label">Session Stats</div>
+          <div class="stats-grid">
+            <div class="stat-tile green" id="tile-focus">
+              <div class="stat-tile-value" id="val-focus-score">—</div>
+              <div class="stat-tile-label">Focus Score</div>
+            </div>
+            <div class="stat-tile" id="tile-drifts">
+              <div class="stat-tile-value" id="val-drifts">—</div>
+              <div class="stat-tile-label">Drifts Today</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-value" id="val-session-time">—</div>
+              <div class="stat-tile-label">Session Time</div>
+            </div>
+            <div class="stat-tile coral">
+              <div class="stat-tile-value" id="val-time-lost">—</div>
+              <div class="stat-tile-label">Est. Time Lost</div>
+              <div class="stat-tile-sub">23min avg recovery/drift</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right column -->
+      <div class="col-right">
+
+        <!-- Recent Browsing -->
+        <div>
+          <div class="section-label">Recent Browsing</div>
+          <div class="feed-list" id="activity-list">
+            <div style="color:#aaa;font-size:13px">Loading…</div>
+          </div>
+        </div>
+
+        <!-- This Week -->
+        <div class="card-wrap">
+          <div class="section-label">This Week</div>
+          <div class="weekly-bars" id="weekly-bars"></div>
+          <div class="weekly-summary" id="weekly-summary"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Today's Session — full-width bottom section -->
+    <div class="session-section" id="session-section" style="display:none">
+      <div class="session-section-title">📅 Today's Session</div>
+      <div id="timeline-bar"><div class="seg-idle" style="flex:1"></div></div>
+      <div class="timeline-ticks" id="timeline-ticks">
+        <span class="tick">—</span><span class="tick">—</span>
+        <span class="tick">—</span><span class="tick">Now</span>
+      </div>
+      <div class="drift-markers" id="drift-markers"></div>
+      <div class="timeline-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#B8E6C1"></div><span id="legend-focused">Focused —</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F9C9B6"></div><span id="legend-drifting">Drifting —</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#D8D4CE"></div><span id="legend-idle">Idle —</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/dashboard.js"></script>
 </body>
 </html>
