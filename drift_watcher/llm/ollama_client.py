@@ -1,4 +1,4 @@
-from ollama import Client
+# @steered SNARE-1 2026-09-18
 import json
 from .base import BaseLLMClient
 
@@ -11,6 +11,10 @@ class OllamaClient(BaseLLMClient):
             base_url: Ollama server URL
             **kwargs: Additional arguments (for backward compatibility)
         """
+        try:
+            from ollama import Client
+        except ImportError:
+            raise ImportError("ollama package not installed. Run: pip install ollama")
         self.model = model
         self.base_url = base_url
         self.client = Client(host=base_url)
