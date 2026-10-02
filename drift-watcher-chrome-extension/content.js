@@ -1,6 +1,7 @@
 let scrollCount = 0;
 let keyCount = 0;
 let lastUrl = location.href;
+let pendingContentExtraction = null;
 
 function contextAlive() {
   return !!(chrome && chrome.runtime && chrome.runtime.id);
@@ -16,23 +17,50 @@ function safeSendMessage(payload) {
 }
 
 function extractPageContent() {
-  // Extract meaningful text content from the page
   const body = document.body;
   if (!body) return "";
-  
-  // Remove script, style, and other non-content elements
-  const clone = body.cloneNode(true);
+
+  // Try semantic containers first — avoids nav/header junk at top of body
+  const semanticSelectors = ['main', '[role="main"]', 'article', '.content', '#content', '#main'];
+  let sourceEl = null;
+  for (const sel of semanticSelectors) {
+    const el = document.querySelector(sel);
+    if (el) { sourceEl = el; break; }
+  }
+
+  // Fall back to full body if no semantic element found
+  const clone = (sourceEl || body).cloneNode(true);
   const unwanted = clone.querySelectorAll('script, style, nav, header, footer, iframe, noscript');
   unwanted.forEach(el => el.remove());
-  
-  // Get text content
-  let text = clone.innerText || clone.textContent || "";
-  
-  // Clean up whitespace
+
+  // Prefer h1 + first paragraphs as a denser signal
+  const h1 = clone.querySelector('h1');
+  const paragraphs = Array.from(clone.querySelectorAll('p')).slice(0, 5);
+  let priorityText = '';
+  if (h1) priorityText += (h1.innerText || h1.textContent || '') + ' ';
+  paragraphs.forEach(p => { priorityText += (p.innerText || p.textContent || '') + ' '; });
+
+  let text = priorityText.trim() || (clone.innerText || clone.textContent || '');
   text = text.replace(/\s+/g, ' ').trim();
-  
-  // Limit to first 500 characters for efficiency
   return text.substring(0, 500);
+}
+
+function extractAndSendContent(isUrlChange = false) {
+  // Delay 2s so SPAs have time to render dynamic content
+  if (pendingContentExtraction) clearTimeout(pendingContentExtraction);
+  pendingContentExtraction = setTimeout(() => {
+    const content = extractPageContent();
+    safeSendMessage({
+      type: "INTERACTION_UPDATE",
+      scrollCount: 0,
+      keyCount: 0,
+      title: document.title,
+      url: location.href,
+      content,
+      timestamp: Date.now()
+    });
+    pendingContentExtraction = null;
+  }, 2000);
 }
 
 // Track scroll events
@@ -49,18 +77,20 @@ window.addEventListener("keydown", () => {
 function sendInteractionUpdate() {
   if (!contextAlive()) return;
 
-  // Check for URL changes (SPA navigation like YouTube Shorts)
   const urlChanged = location.href !== lastUrl;
   if (urlChanged) {
     lastUrl = location.href;
-    
+
     safeSendMessage({
       type: "URL_CHANGED",
       title: document.title,
       url: location.href,
-      content: extractPageContent(),
+      content: "",  // content will arrive via delayed extraction below
       timestamp: Date.now()
     });
+
+    // Trigger delayed content extraction for new SPA page
+    extractAndSendContent(true);
   }
 
   safeSendMessage({
@@ -69,8 +99,8 @@ function sendInteractionUpdate() {
     keyCount,
     title: document.title,
     url: location.href,
-    content: urlChanged ? extractPageContent() : undefined,
     timestamp: Date.now()
+    // no content here — content sent separately via extractAndSendContent
   });
 
   scrollCount = 0;
@@ -79,5 +109,8 @@ function sendInteractionUpdate() {
   setTimeout(sendInteractionUpdate, 5000);
 }
 
-// Start tracking
+// Initial delayed content extraction on page load
+extractAndSendContent();
+
+// Start interaction tracking
 sendInteractionUpdate();
